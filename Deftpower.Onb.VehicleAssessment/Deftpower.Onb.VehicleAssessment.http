@@ -1,0 +1,10 @@
+@Deftpower.Onb.VehicleAssessment_HostAddress = http://localhost:5150
+
+GET {{Deftpower.Onb.VehicleAssessment_HostAddress}}/api/users/{{userId}}/sessions
+Accept: application/json
+
+###
+PUT {{Deftpower.Onb.VehicleAssessment_HostAddress}}/api/sessions/
+Accept: application/json
+
+###
