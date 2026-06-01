@@ -54,6 +54,9 @@ If you have time, consider implementing one or more of the following features, o
   3. Run the project: `dotnet run`
   4. Access Swagger UI at `https://localhost:5001/swagger` (or the port shown in the console)
 
+## Project is dockerized
+- to run the project in docker: First: `dotnet restore` then `docker compose up --build`
+
 ## Submission
 - Ensure your code builds and runs.
 - Submit your solution as a Git repository or a zip file.
