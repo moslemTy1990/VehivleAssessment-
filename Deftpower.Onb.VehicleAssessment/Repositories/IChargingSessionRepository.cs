@@ -4,7 +4,6 @@ namespace Deftpower.Onb.VehicleAssessment.Repositories;
 
 public interface IChargingSessionRepository
 {
-    Task<ChargingSession> UpsertAsync(ChargingSession session);
-
+    Task<(ChargingSession Session, bool WasCreated)> UpsertAsync(ChargingSession session);
     Task<List<ChargingSession>> GetByUserIdAsync(string userId);
 }

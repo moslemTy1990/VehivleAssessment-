@@ -6,7 +6,7 @@ namespace Deftpower.Onb.VehicleAssessment.Repositories;
 
 public class ChargingSessionRepository(AppDbContext db) : IChargingSessionRepository
 {
-    public async Task<ChargingSession> UpsertAsync(ChargingSession session)
+    public async Task<(ChargingSession Session, bool WasCreated)> UpsertAsync(ChargingSession session)
     {
         var now = DateTime.UtcNow;
 
@@ -21,7 +21,7 @@ public class ChargingSessionRepository(AppDbContext db) : IChargingSessionReposi
             await db.ChargingSessions.AddAsync(session);
             await db.SaveChangesAsync();
 
-            return session;
+            return (session, true);
         }
 
         existingSession.UserId = session.UserId;
@@ -33,7 +33,7 @@ public class ChargingSessionRepository(AppDbContext db) : IChargingSessionReposi
 
         await db.SaveChangesAsync();
 
-        return existingSession;
+        return (existingSession, false);
     }
 
     public async Task<List<ChargingSession>> GetByUserIdAsync(string userId)

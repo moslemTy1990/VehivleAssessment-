@@ -5,48 +5,24 @@ using Deftpower.Onb.VehicleAssessment.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Deftpower.Onb.VehicleAssessment.Controllers;
-
 [ApiController]
-[Route("api/sessions")]
-public class ChargingSessionController(ISessionInspector sessionInspector, IChargingSessionRepository chargingSessionRepository) : ControllerBase
+public class ChargingSessionController(
+    IChargingSessionRepository chargingSessionRepository,
+    ISessionInspector sessionInspector) : ControllerBase
 {
-    [HttpPut]
-    public async Task<IActionResult> CreateOrUpdateSession(ChargingSession chargingSession)
-    {
-        await sessionInspector.Start(chargingSession);
-
-        return Ok();
-    }
-
-    [Route("/api/users/{userId}/sessions")]
-    [HttpGet]
-    public IActionResult GetSessionsByUser(string userId)
-    {
-        return Ok();
-    }
-    
-    
-    
-    /////
-    ///
-    ///
-    [HttpPost("charging-sessions")]
+    // PUT /api/sessions
+    // Upsert by SessionId: first call creates, subsequent calls update.
+    [HttpPut("api/sessions")]
     public async Task<IActionResult> UpsertChargingSession([FromBody] ChargingSessionRequest? request)
     {
         if (request is null)
-        {
             return BadRequest(new { message = "Request body is required." });
-        }
 
         if (!ModelState.IsValid)
-        {
             return ValidationProblem(ModelState);
-        }
 
         if (request.EndTime.HasValue && request.EndTime.Value < request.StartTime)
-        {
             return BadRequest(new { message = "End time cannot be earlier than start time." });
-        }
 
         var session = new ChargingSession
         {
@@ -58,21 +34,34 @@ public class ChargingSessionController(ISessionInspector sessionInspector, IChar
             EnergyKwh = request.EnergyKwh
         };
 
-        var savedSession = await chargingSessionRepository.UpsertAsync(session);
-
-        return Ok(savedSession);
-    }
-
-    [HttpGet("users/{userId}/charging-sessions")]
-    public async Task<IActionResult> GetChargingSessionsForUser(string userId)
-    {
-        if (string.IsNullOrWhiteSpace(userId))
+        try
         {
-            return BadRequest(new { message = "User id is required." });
+            await sessionInspector.Start(session);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Problem(statusCode: StatusCodes.Status400BadRequest, detail: ex.Message);        }
+
+        var result = await chargingSessionRepository.UpsertAsync(session);
+
+        if (result.WasCreated)
+        {
+            return Created(
+                $"/api/users/{result.Session.UserId}/sessions",
+                result.Session);
         }
 
-        var sessions = await chargingSessionRepository.GetByUserIdAsync(userId.Trim());
+        return Ok(result.Session);
+    }
 
+    // GET /api/users/{userId}/sessions
+    [HttpGet("api/users/{userId}/sessions")]
+    public async Task<IActionResult> GetSessionsByUser(string userId)
+    {
+        if (string.IsNullOrWhiteSpace(userId))
+            return BadRequest(new { message = "User id is required." });
+
+        var sessions = await chargingSessionRepository.GetByUserIdAsync(userId.Trim());
         return Ok(sessions);
     }
 }

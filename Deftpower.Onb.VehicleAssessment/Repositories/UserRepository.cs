@@ -56,5 +56,10 @@ namespace Deftpower.Onb.VehicleAssessment.Repositories
             return await db.Users
                 .ToListAsync();
         }
+        
+        public async Task<bool> IsUserForbiddenAsync(string userId)
+        {
+            return await db.ForbiddenUsers.AnyAsync(x => x.UserId == userId);
+        }
     }
 }

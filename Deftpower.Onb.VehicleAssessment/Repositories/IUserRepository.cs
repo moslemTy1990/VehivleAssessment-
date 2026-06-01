@@ -10,6 +10,7 @@ namespace Deftpower.Onb.VehicleAssessment.Repositories
         Task<User?> GetUserByIdAsync(string id);
         Task<bool> EmailExistsAsync(string email);
         Task<bool> UserExistsAsync(string id);
+        Task<bool> IsUserForbiddenAsync(string userId);
 
         Task<ForbiddenUser> AddForbiddenUserAsync(string userId, string reason);
         Task<List<ForbiddenUser>> GetAllForbiddenUsersAsync();
