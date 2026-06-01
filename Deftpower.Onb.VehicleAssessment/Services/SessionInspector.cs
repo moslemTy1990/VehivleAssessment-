@@ -5,28 +5,27 @@ namespace Deftpower.Onb.VehicleAssessment.Services;
 
 public class SessionInspector(ILogger<SessionInspector> logger, IUserRepository userRepository) : ISessionInspector
 {
-    public async Task Start(ChargingSession? x)
+    public async Task Start(ChargingSession? session)
     {
-        if (x == null)
-        {
-            throw new ArgumentNullException(nameof(x), "Charging session cannot be null.");
-        }
+        if (session is null)
+            throw new ArgumentNullException(nameof(session), "Charging session cannot be null.");
 
-        logger.LogInformation($"Verifying charging session {x.SessionId} for validation.");
+        logger.LogInformation("Validating charging session {SessionId}.", session.SessionId);
 
-        var forbiddenUsers = await userRepository.GetAllForbiddenUsersAsync();
-        var forbiddenUserIds = forbiddenUsers.Select(s => s.UserId).ToList();
+        if (!CheckSession(session))
+            throw new ArgumentException("Charging session is invalid.", nameof(session));
 
-        if (forbiddenUserIds.Contains(x.UserId))
-        {
-            logger.LogWarning($"User {x.UserId} is not allowed to start a charging session.");
-        }
+        var isForbidden = await userRepository.IsUserForbiddenAsync(session.UserId);
         
-        if (!CheckSession(x))
+        if (isForbidden)
         {
-            logger.LogError($"Charging session {x.SessionId} is not valid.");        }
+            logger.LogWarning("User {UserId} is forbidden from charging.", session.UserId);
+            throw new InvalidOperationException($"User {session.UserId} is forbidden from starting charging sessions.");
+        }
     }
 
-    private bool CheckSession(ChargingSession? s) =>
-         s != null && !string.IsNullOrEmpty(s.UserId) && !string.IsNullOrEmpty(s.SessionId) && s.StartTime != new DateTime();
+    private static bool CheckSession(ChargingSession s) =>
+        !string.IsNullOrWhiteSpace(s.UserId) &&
+        !string.IsNullOrWhiteSpace(s.SessionId) &&
+        s.StartTime != default;
 }
